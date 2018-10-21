@@ -20,65 +20,38 @@
 
 
 int main(void) {
-	int socket1=socket(AF_INET,SOCK_DGRAM,0);///////////
-
-	struct sockaddr_in ClientAddr;
-//	ClientAddr.sin_addr.s_addr=htonl(INADDR_ANY);
-	ClientAddr.sin_addr.s_addr=inet_addr("127.0.0.1");
-	ClientAddr.sin_family=AF_INET;
-	ClientAddr.sin_port= htons(8001);
+	int socket1=socket(AF_INET,SOCK_DGRAM,0);
 
 	struct sockaddr_in ServerAddr;
-//	addr.sin_addr.s_addr=htonl(inet_addr("127.0.0.1"));//INADDR_ANY//LOCALHOST
-	ServerAddr.sin_addr.s_addr=htonl(INADDR_ANY);
+	ServerAddr.sin_addr.s_addr=inet_addr("127.0.0.1");
 	ServerAddr.sin_family=AF_INET;
 	ServerAddr.sin_port= htons(8000);
 
 	int bind1=bind(socket1,(struct sockaddr*) &ServerAddr,sizeof(ServerAddr));
 
-		printf("Client...\n");
-		printf("addr=%u\n",ClientAddr.sin_addr.s_addr);
-		printf("addr=%s\n",inet_ntoa(ClientAddr.sin_addr.s_addr));
-		printf("port=%u\n",ClientAddr.sin_port);
-
-
-		printf("Server...\n");
-		printf("addr=%u\n",ServerAddr.sin_addr.s_addr);
-		printf("addr=%s\n",inet_ntoa(ServerAddr.sin_addr.s_addr));
-		printf("port=%u\n",ServerAddr.sin_port);
-
-
 	char msg[MAX_MSG_SIZE];
-//	char echo[MAX_MSG_SIZE]="hello0";
-	char* echo="success";
-	struct sockaddr_in addr;
+	char echo[MAX_MSG_SIZE]="Get Echo from Server!\n";
 
-	int sizeT=sizeof(addr);
+	struct sockaddr addr;
+	socklen_t addrlen=sizeof(addr);
+	struct sockaddr_in* addrin;
+	int i=0;
+
 	while(1){
 		bzero(msg,MAX_MSG_SIZE);
 		printf("waiting...\n");
-//		recvfrom(socket1,msg,sizeof(msg),0,(struct sockaddr*) &ClientAddr,sizeof(ClientAddr));
-		recvfrom(socket1,msg,sizeof(msg),0,(struct sockaddr*) &addr,sizeof(addr));
-		puts(msg);
+		recvfrom(socket1,msg,sizeof(msg),0,&addr,&addrlen);
 		
-//		printf("%u\n",addr.sa_data);
-		printf("addr...\n");
-		printf("addr=%u\n",addr.sin_addr.s_addr);
-		printf("addr=%s\n",inet_ntoa(addr.sin_addr.s_addr));
-		printf("port=%u\n",addr.sin_port); 
-		if (msg=="close") {
-			close(socket1);
-			break;		
-		}
-
-		sendto(socket1,echo,strlen(echo),0,(struct sockaddr*) &ClientAddr,sizeof(ClientAddr));
-		printf("Client2...\n");
-		printf("addr=%u\n",ClientAddr.sin_addr.s_addr);
-		printf("addr=%s\n",inet_ntoa(ClientAddr.sin_addr.s_addr));
-		printf("port=%u\n",ClientAddr.sin_port);
-//		sendto(socket1,echo,strlen(echo),0,(struct sockaddr*) &addr,sizeof(addr));
-
-//		printf("sent to %s\n",ClientAddr.sa_data);
+		addrin=(struct sockaddr_in *) &addr;
+/*		printf("addr...\n");
+		printf("addr=%u\n",addrin->sin_addr);
+		printf("addr=%s\n",inet_ntoa(addrin->sin_addr));
+		printf("port=%u\n",addrin->sin_port); 
+*/
+		printf("from Client %s:%u\n",inet_ntoa(addrin->sin_addr),addrin->sin_port);
+		i++;
+		printf("message%d:%s",i,msg);
+		sendto(socket1,echo,strlen(echo),0,(struct sockaddr*) &addr,addrlen);
 	}
 
 
