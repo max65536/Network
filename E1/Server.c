@@ -14,8 +14,9 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <string.h>
+#include <arpa/inet.h>
 
-#define PORT 8001
+#define PORT 16000
 #define MAX_MSG_SIZE 1024
 
 
@@ -25,7 +26,7 @@ int main(void) {
 	struct sockaddr_in ServerAddr;
 	ServerAddr.sin_addr.s_addr=inet_addr("127.0.0.1");
 	ServerAddr.sin_family=AF_INET;
-	ServerAddr.sin_port= htons(8000);
+	ServerAddr.sin_port= htons(16000);
 
 	int bind1=bind(socket1,(struct sockaddr*) &ServerAddr,sizeof(ServerAddr));
 
@@ -41,12 +42,12 @@ int main(void) {
 		bzero(msg,MAX_MSG_SIZE);
 		printf("waiting...\n");
 		recvfrom(socket1,msg,sizeof(msg),0,&addr,&addrlen);
-		
+
 		addrin=(struct sockaddr_in *) &addr;
 /*		printf("addr...\n");
 		printf("addr=%u\n",addrin->sin_addr);
 		printf("addr=%s\n",inet_ntoa(addrin->sin_addr));
-		printf("port=%u\n",addrin->sin_port); 
+		printf("port=%u\n",addrin->sin_port);
 */
 		printf("from Client %s:%u\n",inet_ntoa(addrin->sin_addr),addrin->sin_port);
 		i++;
