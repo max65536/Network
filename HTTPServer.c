@@ -19,74 +19,83 @@
 
 #define PORT 16002
 #define MAX_HEAD_SIZE 1024
-void clienterror(int fd, char *errnum, 
+void clienterror(int fd, char *errnum,
 		 char *shortmsg, char *longmsg);
-
+void send2client(int fd, char *code,
+		 char *status,char *msg);
+void do_service(int fd);
 int main(void) {
-	int socket1=socket(AF_INET,SOCK_STREAM,0);
+	int socketfd=socket(AF_INET,SOCK_STREAM,0);
 	int status;
 	struct sockaddr_in ServerAddr;
 	ServerAddr.sin_addr.s_addr=INADDR_ANY;
 	ServerAddr.sin_family=AF_INET;
 	ServerAddr.sin_port= htons(PORT);
 
-	int bind1=bind(socket1,(struct sockaddr*) &ServerAddr,sizeof(ServerAddr));
+	int bind1=bind(socketfd,(struct sockaddr*) &ServerAddr,sizeof(ServerAddr));
 
-	char buf[150];
+	char buf[MAX_HEAD_SIZE];
 	char msg[MAX_HEAD_SIZE];
 	int i=0;
-	listen(socket1, 5);
-	struct sockaddr addr;
+	listen(socketfd, 5);
+	struct sockaddr_in addr;
 	socklen_t addrlen=sizeof(addr);
 	struct sockaddr_in* addrin;
 	int clientfd;
 	FILE *f;
 	char Head[MAX_HEAD_SIZE];
 	char Body[10]="hello!";
+	int child_pid=0;
 	while(1){
-		bzero(Head,sizeof(Head));
-		bzero(buf,150);
+
 		printf("waiting for connection...\n");
+		// printf("1----------------------------------------\n");
+		clientfd=accept(socketfd,(struct sockaddr*)&addr,&addrlen);
+		// if (clientfd < 0)
+		//    printf("ERROR on accept\n");
+		printf("----------------------------------------\n");
+		printf("connection from %s:%d\n", inet_ntoa(addr.sin_addr),ntohs(addr.sin_port) );
 
-		clientfd=accept(socket1,&addr,&addrlen);
-		if (clientfd < 0)
-		   printf("ERROR on accept\n");
+		// f=fdopen(clientfd,"r");
+		// for (i=0;i<5;i++){
+		// 	fgets(buf,150,f);
+		// 	printf("%s",buf);
+		// }
 
-		//do{
-		//bzero(msg,MAX_HEAD_SIZE);
-		status=recv(clientfd,msg,sizeof(msg),0);
-		//printf("%d\n",status);
-		//}while(status > 0);
-		clienterror(clientfd, "404", "Not found",
-			    "We couldn't find this file");
-		f=fdopen(clientfd,"r");
-		for (i=0;i<3;i++){
-			fgets(buf,150,f);
-			printf("%s",buf);
+		// clienterror(clientfd, "404", "Not found","We couldn't find this file");
+		child_pid=fork();
+		printf("child_pid=%d\n",child_pid);
+		if ((child_pid)==0){
+			close(socketfd);
+			f=fdopen(clientfd,"r");
+			// for (i=0;i<5;i++){
+			// 	fgets(buf,1024,f);
+			// 	printf("%s",buf);
+			// }
+			do_service(clientfd);
+			// bzero(Head,sizeof(Head));
+			// bzero(buf,1024);
+			// send2client(clientfd,"200","OK","<html><body>Hello</body></html>");
+			fclose(f);
 		}
-		fclose(f);
-		//sprintf(Head,"HTTP1.1 200 Ok/\r\n");
-		//sprintf(Head,"Content-Length: 6\r\n",Head);
-		//sprintf(Head,"Connection: close\r\n",Head);
-		//sprintf(Head,"Content-Type: text/plain\r\n\r\n",Head);
 
-		//printf("%d\n%s",strlen(Head),Head);
-		//send(clientfd,Head,strlen(Head),0);
+		// f=fdopen(clientfd,"r");
+		// for (i=0;i<3;i++){
+		// 	fgets(buf,150,f);
+		// 	printf("%s",buf);
+		// }
 
-
-		//printf("%d\n%s",strlen(Body),Body);
-		//send(clientfd,Body,strlen(Body),0);
 
 		close(clientfd);
 
 	}
 
-	close(socket1);
+	close(socketfd);
 	return EXIT_SUCCESS;
 }
 
-void clienterror(int fd, char *errnum, 
-		 char *shortmsg, char *longmsg) 
+void clienterror(int fd, char *errnum,
+		 char *shortmsg, char *longmsg)
 {
     char buf1[MAX_HEAD_SIZE], body1[MAX_HEAD_SIZE];
     int j;
@@ -102,3 +111,49 @@ void clienterror(int fd, char *errnum,
     send(fd, buf1, strlen(buf1),0);
     send(fd, body1, strlen(body1),0);
 }
+void send2client(int fd, char *code,
+		 char *status, char *msg)
+{
+    char buf1[MAX_HEAD_SIZE], body1[MAX_HEAD_SIZE];
+    int j;
+    /* Build the HTTP response body */
+    // msg="<html><body>Hello</body></html>"
+    sprintf(body1, msg);
+
+    /* Print the HTTP response */
+    sprintf(buf1, "HTTP/1.1 %s %s\r\n", code, status);
+    sprintf(buf1, "%sContent-length: %d\r\n", buf1,(int)strlen(body1));
+    sprintf(buf1,"%sConnection: close\r\n",buf1);
+    sprintf(buf1, "%sContent-type: text/html\r\n\r\n",buf1);
+    printf("\n%s",buf1);
+    send(fd, buf1, strlen(buf1),0);
+    send(fd, body1, strlen(body1),0);
+}
+void do_service(int fd){
+	char buf[1024];
+	int i;
+	FILE *f;
+	while (1)
+	{
+		memset(buf, 0, sizeof(buf));
+		// int ret =recv(fd, recvbuf, 1024,0);
+		// if (ret == 0) //客户端关闭了
+		// {
+		// 	printf("client close\n");
+		// 	break;
+		// }
+		// else if (ret == -1){
+		// 	printf("read error\n");
+		// 	exit(1);
+		// }
+		f=fdopen(fd,"r");
+		for (i=0;i<3;i++){
+			fgets(buf,1024,f);
+			printf("%s",buf);
+		}
+
+		// printf("%s",recvbuf);
+		send2client(fd,"200","OK","<html><body>Hello</body></html>");
+	}
+}
+
