@@ -1,12 +1,13 @@
 /*
  ============================================================================
- Name        : IPv6_31.c
+ Name        : IPv6_32.c
  Author      : np
  Version     :
  Copyright   : Your copyright notice
  Description : Hello World in C, Ansi-style
  ============================================================================
  */
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,18 +16,19 @@
 #include <netinet/in.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include<netdb.h>
 #include <unistd.h>
 #include <sys/stat.h>
 
 #define PORT 16007
 #define MAX_HEAD_SIZE 1024
-
 void clienterror(int fd, char *errnum,
 		 char *shortmsg, char *longmsg);
 void send2client(int fd, char *code,
 		 char *status,char *msg);
 int sendString(int fd, char *buf, int* len);
 void do_service(int fd);
+void *get_in_addr(struct sockaddr *sa);
 
 char* file_type(char* arg) ;
 int not_exit(char* arguments);
@@ -34,30 +36,36 @@ unsigned long get_file_size(const char *path);
 void send_header(int sock,char* content_type, int content_length);
 void send_file(char* arguments, int sock);
 void handle_req(char* request, int client_sock);
- 
+
 int main(void) {
-	int socketfd = socket(AF_INET6,SOCK_STREAM,0);
-
-	struct sockaddr_in6 ServerAddr;
-	ServerAddr.sin6_family = AF_INET6;
-	ServerAddr.sin6_addr = in6addr_any;
-	ServerAddr.sin6_port = htons(PORT);
-
-	int bind1=bind(socketfd,(struct sockaddr*) &ServerAddr,sizeof(ServerAddr));
-
+	int socketfd,clientfd;
+	struct addrinfo hints, *res;
+	struct sockaddr_storage addr;
+	socklen_t addrlen=sizeof(addr);
+	int child_pid=0;
 	int r;	
+	char Head[MAX_HEAD_SIZE];
 	char buf[MAX_HEAD_SIZE];
 	char msg[MAX_HEAD_SIZE];
 	char ip6[128];
+	char host[128];
 	int i=0;
-	listen(socketfd, 5);
-	struct sockaddr_in6 addr;
-	socklen_t addrlen=sizeof(addr);
-	struct sockaddr_in6* addrin;
-	int clientfd;
 	FILE *f;
-	char Head[MAX_HEAD_SIZE];
-	int child_pid=0;
+
+	memset(&hints,0,sizeof hints);
+	hints.ai_family = AF_INET6;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_flags = AI_PASSIVE;
+	getaddrinfo(NULL, "16007", &hints, &res);
+
+	socketfd = socket(res->ai_family,res->ai_socktype, res->ai_protocol);
+
+	bind(socketfd, res->ai_addr, res->ai_addrlen);
+
+
+	listen(socketfd, 5);
+
+
 	while(1){
 
 		printf("waiting for connection...\n");
@@ -66,8 +74,10 @@ int main(void) {
             		printf("accept error\n");
             		continue;
         	}
+		gethostname(host,sizeof host);//ipv6_33
 		printf("----------------------------------------\n");
-		printf("connection from %s:%d\n",   inet_ntop(AF_INET6,&addr.sin6_addr,ip6,addrlen),ntohs(addr.sin6_port) );
+		printf("connection from %s\n", inet_ntop(addr.ss_family, get_in_addr((struct sockaddr*)&addr),ip6,sizeof ip6) );//ipv6_33
+		printf("Local is %s\n", host );//ipv6_33
 
 		child_pid=fork();
 		printf("child_pid=%d\n",child_pid);
@@ -77,9 +87,9 @@ int main(void) {
                         r=recv(clientfd,buf,1024,0);
                         printf("%s",buf);
 
-            handle_req(buf,clientfd);
+            		handle_req(buf,clientfd);
 			close(clientfd);
-            exit(0);
+            		exit(0);
 		}
 
 
@@ -91,8 +101,6 @@ int main(void) {
 
 	return EXIT_SUCCESS;
 }
-
-
 void clienterror(int fd, char *errnum,
 		 char *shortmsg, char *longmsg)
 {
@@ -110,8 +118,6 @@ void clienterror(int fd, char *errnum,
     send(fd, buf1, strlen(buf1),0);
     send(fd, body1, strlen(body1),0);
 }
-
-
 void send2client(int fd, char *code,
 		 char *status, char *msg)
 {
@@ -130,8 +136,6 @@ void send2client(int fd, char *code,
     send(fd, buf1, strlen(buf1),0);
     send(fd, body1, strlen(body1),0);
 }
-
-
 void do_service(int fd){
 	char buf[1024];
 	int i;
@@ -144,9 +148,16 @@ void do_service(int fd){
 			fgets(buf,1024,f);
 			printf("%s",buf);
 		}
-
 		send2client(fd,"200","OK","<html><body>Hello</body></html>");
 	}
+}
+
+void *get_in_addr(struct sockaddr *sa){
+		if(sa->sa_family == AF_INET){
+			return &(((struct sockaddr_in*)sa)->sin_addr);
+		}
+		return &(((struct sockaddr_in6*)sa)->sin6_addr);
+
 }
 
 
@@ -173,8 +184,6 @@ char* file_type(char* arg) {
  }
  return "";      //如果请求的文件名中没有. 则返回空串
 }
-
-
 int not_exit(char* arguments) {
     struct stat dir_info;
     return (stat(arguments, &dir_info) == -1);
