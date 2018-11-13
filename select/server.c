@@ -37,14 +37,14 @@ int main(void) {
         act.sa_flags = 0;
         sigemptyset(&act.sa_mask);
         sigaction(SIGUSR1, &act ,0);
-        int pid;
+        int pid=0;
         while(1)
         {
             printf("no connection\n");
             for(j=0;j<1000000000;j++)
             {;}
             pid=fork();
-            if(pid!=0)
+            if(pid==0)
             {
                 kill(getpid(),SIGUSR1);
 
