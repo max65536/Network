@@ -25,7 +25,7 @@
 #define MAX_MSG_SIZE 1024
 
 int main(void) {
-    char recvbuf[MAX_MSG_SIZE];
+    unsigned char recvbuf[MAX_MSG_SIZE];
     char* ether;
     int packet_socket = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
     int i;
@@ -44,7 +44,8 @@ int main(void) {
                 printf("MSG:");
             }
             printf(" %x ", recvbuf[i]);
-           if(recvbuf[i]==0 && recvbuf[i+1]==0 && recvbuf[i+1]==0){
+           if(recvbuf[i]==0 && recvbuf[i+1]==0 && recvbuf[i+2]==0&&
+                   recvbuf[i+3]==0 && recvbuf[i+4]==0 && recvbuf[i+5]==0){
                break; // under this circumstance, we think the recv data stops here
            }
         }
