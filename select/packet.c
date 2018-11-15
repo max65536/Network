@@ -38,19 +38,21 @@ int main(void) {
     while(1){
         memset(recvbuf,0,MAX_MSG_SIZE);
         recvfrom(packet_socket, recvbuf, sizeof(recvbuf), 0, (struct sockaddr*) &LLAddr,&addrlen);
-        //ether = recvbuf;
         for(i=0; i<MAX_MSG_SIZE;i++){
             if(i==0){
                 printf("MSG:");
             }
-            printf(" %x ", recvbuf[i]);
+
+            printf(" %d ", recvbuf[i]);
            if(recvbuf[i]==0 && recvbuf[i+1]==0 && recvbuf[i+2]==0&&
                    recvbuf[i+3]==0 && recvbuf[i+4]==0 && recvbuf[i+5]==0){
                break; // under this circumstance, we think the recv data stops here
            }
         }
-
-        printf("\n\n");
+       printf("\n PROTOCOL is %d \n",recvbuf[19]);
+       printf("S IP is %d:%d:%d:%d\n", recvbuf[22], recvbuf[23], recvbuf[24], recvbuf[25]);
+       printf("D IP %d:%d:%d:%d",recvbuf[26],  recvbuf[27], recvbuf[28], recvbuf[29]);
+       printf("\n\n");
     }
 
     return EXIT_SUCCESS;
