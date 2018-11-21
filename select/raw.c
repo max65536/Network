@@ -81,7 +81,7 @@ struct icmp
 
 uint16_t cksum(unsigned short buffer[], int size);
 
-int main(void){
+int main(int argc, char *argv[]){
 	int on = 1;
 	struct ip *iphd;
 	struct icmp *icmphd;
@@ -91,13 +91,21 @@ int main(void){
 	unsigned char package[8];
 	clock_t start,finish;
 
-    struct sockaddr_in ServerAddr;
+    	struct sockaddr_in ServerAddr;
 	struct sockaddr_in addr;
 	struct sockaddr_in recvaddr;
 	socklen_t addrlen=sizeof(addr);
 	struct sockaddr_in* addrin;
+	
+	char address[20];
+	strcpy(address,argv[1]);
+//	for (short i=0;i<argc; i++){
+//		printf("i=%d:%s\n",i,argv[i]);
+//	}
+	printf("ping %s...\n",address);
 
-	ServerAddr.sin_addr.s_addr=inet_addr("127.0.0.1");
+	ServerAddr.sin_addr.s_addr=inet_addr(address);
+//	ServerAddr.sin_addr.s_addr=inet_addr("127.0.0.1");
 	ServerAddr.sin_family=AF_INET;
 	ServerAddr.sin_port= htons(PORT);
 
@@ -113,6 +121,11 @@ int main(void){
 	int r;
 	iphd= (struct ip*)recvbuf;
 	recvicmp=(struct icmp*)(recvbuf+sizeof(struct ip));
+
+//	for (short i=0;i<argc; i++){
+//		printf("%s\n",argv[i]);
+//	}
+
 	for (short i=0;i<5;i++){
 		// printf("package=%s\n",package);
 		// printf("size=%d\n",sizeof(package));

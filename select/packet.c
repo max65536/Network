@@ -35,6 +35,10 @@ int main(void) {
     int addrlen = sizeof (LLAddr);
     struct packet_mreq Mreq;
     Mreq.mr_type = PACKET_MR_PROMISC;
+    struct ether_header *eh = (struct ether_header *) recvbuf;
+    char dhost[6],shost[6];
+
+
     setsockopt(packet_socket, SOL_PACKET, PACKET_ADD_MEMBERSHIP, &Mreq, sizeof(Mreq));
 
     while(1){
@@ -67,10 +71,16 @@ int main(void) {
  		  case 132: printf("\n PROTOCOL: SCTP "); break;
 		  default: printf("\n unknown protocol");
                }
-	       //printf("\n protocol is %d", recvbuf[flag+9]);
+	       //if (recvbuf[flag+9]!=17) continue;
 	       printf(" Source IP is %d:%d:%d:%d ", recvbuf[flag+12], recvbuf[flag+13], recvbuf[flag+14], recvbuf[flag+15]);
 	       printf(" Destination IP %d:%d:%d:%d ",recvbuf[flag+16],  recvbuf[flag+17], recvbuf[flag+18], recvbuf[flag+19]);
-	       printf("\n\n");
+		//printf("dhost=");
+		//for (i=0;i<5;i++) printf("%x:",eh->ether_dhost[i]);
+		//printf("%x\n",eh->ether_dhost[5]);
+		printf("shost=");
+		for (i=0;i<5;i++) printf("%x:",eh->ether_shost[i]);
+		printf("%x\n",eh->ether_shost[5]);
+	       printf("\n");
       
 
     }
